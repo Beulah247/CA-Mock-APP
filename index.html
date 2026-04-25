@@ -15,31 +15,41 @@
         .config-box { background: #0f172a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fbbf24; }
         textarea { width: 100%; height: 120px; padding: 15px; border-radius: 8px; border: 1px solid #475569; background: #020617; color: #fbbf24; font-family: monospace; box-sizing: border-box; }
         select, button { padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-gold { background: #fbbf24; color: #020617; width: 100%; margin-top: 15px; }
-        .mcq-box { margin-bottom: 20px; padding: 20px; background: #334155; border-radius: 8px; transition: 0.3s; }
+        .btn-gold { background: #fbbf24; color: #020617; width: 100%; margin-top: 15px; text-transform: uppercase; }
+        .mcq-box { margin-bottom: 20px; padding: 20px; background: #334155; border-radius: 8px; }
         .option { padding: 12px; border: 1px solid #475569; border-radius: 5px; margin-top: 8px; cursor: pointer; background: #1e293b; }
-        .option:hover { border-color: #fbbf24; }
         .correct { background: #14532d !important; border-color: #22c55e !important; }
         .wrong { background: #7f1d1d !important; border-color: #ef4444 !important; }
         .score-card { background: #fbbf24; color: #020617; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        label { display: block; font-size: 12px; margin-bottom: 5px; color: #94a3b8; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
+        const SUBJECTS = [
+            "Paper 1: Advanced Accounting",
+            "Paper 2: Corporate and Other Laws",
+            "Paper 3: Cost and Management Accounting",
+            "Paper 4: Taxation",
+            "Paper 5: Auditing and Ethics",
+            "Paper 6: FM and Strategic Management"
+        ];
+
         function App() {
             const [jsonInput, setJsonInput] = React.useState("");
             const [paper, setPaper] = React.useState(null);
             const [view, setView] = React.useState("setup");
             const [userAnswers, setUserAnswers] = React.useState({});
             const [difficulty, setDifficulty] = React.useState("Medium");
+            const [selectedSubject, setSelectedSubject] = React.useState(SUBJECTS[0]);
 
             const loadPaper = () => {
                 try {
                     const parsed = JSON.parse(jsonInput);
                     setPaper(parsed);
                     setView("exam");
-                } catch (e) { alert("Invalid JSON format!"); }
+                } catch (e) { alert("Invalid JSON format! Please copy the code from the AI correctly."); }
             };
 
             const handleMCQ = (qIdx, choice) => {
@@ -48,16 +58,18 @@
 
             const calculateScore = () => {
                 let score = 0;
-                paper.mcqs.forEach((q, i) => {
-                    if(userAnswers[i] === q.correctAnswer) score++;
-                });
+                if (paper && paper.mcqs) {
+                    paper.mcqs.forEach((q, i) => {
+                        if(userAnswers[i] === q.correctAnswer) score++;
+                    });
+                }
                 return score;
             };
 
             return (
                 <div className="container">
                     <header>
-                        <div style={{fontSize: '40px'}}>₹</div>
+                        <div style={{fontSize: '40px', color: '#fbbf24'}}>₹</div>
                         <div>
                             <h1>CA INTER EXAM SYSTEM</h1>
                             <p style={{margin:0, opacity: 0.7}}>AI-POWERED SELF ASSESSMENT</p>
@@ -66,25 +78,32 @@
                     <div className="content">
                         {view === "setup" ? (
                             <div className="config-box">
-                                <h3 style={{color:'#fbbf24'}}>PAPER CONFIGURATION</h3>
-                                <div style={{display:'flex', gap:'10px', marginBottom:'15px'}}>
-                                    <div style={{flex:1}}>
+                                <h3 style={{color:'#fbbf24', marginTop: 0}}>PAPER CONFIGURATION</h3>
+                                <div style={{display:'flex', gap:'15px', marginBottom:'20px'}}>
+                                    <div style={{flex: 2}}>
+                                        <label>CHOOSE SUBJECT</label>
+                                        <select style={{width:'100%', background: '#1e293b', color: 'white'}} value={selectedSubject} onChange={(e)=>setSelectedSubject(e.target.value)}>
+                                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <div style={{flex: 1}}>
                                         <label>DIFFICULTY</label>
-                                        <select style={{width:'100%', marginTop:'5px'}} value={difficulty} onChange={(e)=>setDifficulty(e.target.value)}>
+                                        <select style={{width:'100%', background: '#1e293b', color: 'white'}} value={difficulty} onChange={(e)=>setDifficulty(e.target.value)}>
                                             <option>Easy</option><option>Medium</option><option>Hard</option>
                                         </select>
                                     </div>
                                 </div>
-                                <label>PASTE DATA FROM AI</label>
+                                <label>PASTE DATA FROM AI (GEMINI/CLAUDE)</label>
                                 <textarea value={jsonInput} onChange={(e) => setJsonInput(e.target.value)} placeholder="Paste JSON here..." />
-                                <button className="btn-gold" onClick={loadPaper}>GENERATE PAPER</button>
+                                <button className="btn-gold" onClick={loadPaper}>GENERATE {selectedSubject.split(':')[0]}</button>
                             </div>
                         ) : (
                             <div>
                                 <div className="score-card">
-                                    SCORE: {calculateScore()} / {paper.mcqs.length} (MCQs) | Difficulty: {difficulty}
+                                    {selectedSubject.toUpperCase()} | SCORE: {calculateScore()} / {paper.mcqs.length} | DIFFICULTY: {difficulty}
                                 </div>
-                                <h3>SECTION A: LIVE GRADING MCQs</h3>
+                                
+                                <h3 style={{color: '#fbbf24'}}>SECTION A: MCQs (INSTANT GRADING)</h3>
                                 {paper.mcqs.map((q, i) => (
                                     <div key={i} className="mcq-box">
                                         <p><b>Q{i+1}.</b> {q.question}</p>
@@ -102,10 +121,31 @@
                                                 </div>
                                             );
                                         })}
-                                        {userAnswers[i] && <p style={{marginTop: '10px', fontSize:'14px', color:'#fbbf24'}}><b>Note:</b> {q.explanation}</p>}
+                                        {userAnswers[i] && <p style={{marginTop: '15px', padding: '10px', background: '#0f172a', borderRadius: '5px', fontSize:'14px', border: '1px dashed #fbbf24'}}>
+                                            <b style={{color: '#fbbf24'}}>EXPLANATION:</b> {q.explanation}
+                                        </p>}
                                     </div>
                                 ))}
-                                <button style={{background:'#475569', color:'white'}} onClick={() => setView("setup")}>RESET PORTAL</button>
+
+                                {paper.descriptive && (
+                                    <>
+                                        <h3 style={{color: '#fbbf24', marginTop: '40px'}}>SECTION B: DESCRIPTIVE QUESTIONS</h3>
+                                        {paper.descriptive.map((q, i) => (
+                                            <div key={i} style={{padding: '20px', background: '#1e293b', borderLeft: '5px solid #fbbf24', marginBottom: '20px'}}>
+                                                <p><b>Question {q.qno} ({q.marks} Marks)</b></p>
+                                                <p style={{whiteSpace: 'pre-wrap'}}>{q.question}</p>
+                                                <details style={{marginTop: '15px', cursor: 'pointer'}}>
+                                                    <summary style={{color: '#fbbf24', fontWeight: 'bold'}}>REVEAL ICAI MODEL ANSWER / WORKING NOTES</summary>
+                                                    <div style={{marginTop: '10px', padding: '15px', background: '#0f172a', fontSize: '14px', lineHeight: '1.6'}}>
+                                                        {q.answerKey}
+                                                    </div>
+                                                </details>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+                                
+                                <button style={{background:'#475569', color:'white', marginTop: '30px'}} onClick={() => {setView("setup"); setUserAnswers({}); setJsonInput("");}}>← BACK TO CONFIGURATION</button>
                             </div>
                         )}
                     </div>
