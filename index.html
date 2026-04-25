@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Inter Mock Portal</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        header { background: #1e3a8a; color: white; padding: 20px; text-align: center; }
+        .content { padding: 30px; }
+        textarea { width: 100%; height: 200px; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: monospace; }
+        button { width: 100%; padding: 15px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .mcq-box { margin-bottom: 20px; padding: 15px; border-bottom: 1px solid #f1f5f9; }
+        .option { padding: 8px; border: 1px solid #e2e8f0; border-radius: 5px; margin-top: 5px; }
+        .desc-box { padding: 15px; border-left: 4px solid #f97316; background: #fffaf5; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        function App() {
+            const [jsonInput, setJsonInput] = React.useState("");
+            const [paper, setPaper] = React.useState(null);
+            const [view, setView] = React.useState("setup");
+            const [showAnswers, setShowAnswers] = React.useState(false);
+
+            const loadPaper = () => {
+                try {
+                    const parsed = JSON.parse(jsonInput);
+                    setPaper(parsed);
+                    setView("exam");
+                } catch (e) {
+                    alert("Error: Make sure you copied the JSON code correctly from the AI!");
+                }
+            };
+
+            return (
+                <div className="container">
+                    <header>
+                        <h1>CA Inter Mock Portal</h1>
+                        <p>Self-Assessment Tool</p>
+                    </header>
+                    <div className="content">
+                        {view === "setup" ? (
+                            <div>
+                                <h3>Step 1: Generate Paper</h3>
+                                <p>Ask Gemini/Claude for the "CA Inter Mock JSON" and paste it below:</p>
+                                <textarea value={jsonInput} onChange={(e) => setJsonInput(e.target.value)} placeholder="Paste JSON here..." />
+                                <button onClick={loadPaper}>Start Practice</button>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                    <h2>{paper.subject}</h2>
+                                    <button style={{width:'auto', padding:'5px 15px'}} onClick={() => setShowAnswers(!showAnswers)}>
+                                        {showAnswers ? "Hide Solutions" : "Reveal Solutions"}
+                                    </button>
+                                </div>
+                                <hr />
+                                <h3>Section A: MCQs</h3>
+                                {paper.mcqs.map((q, i) => (
+                                    <div key={i} className="mcq-box">
+                                        <p><b>Q{i+1}.</b> {q.question}</p>
+                                        {Object.entries(q.options).map(([key, val]) => (
+                                            <div key={key} className="option" style={{background: showAnswers && key === q.correctAnswer ? '#dcfce7' : 'white'}}>
+                                                <b>{key}.</b> {val}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                                <h3>Section B: Descriptive</h3>
+                                {paper.descriptive.map((q, i) => (
+                                    <div key={i} className="desc-box">
+                                        <p><b>Q{q.qno} ({q.marks} Marks)</b></p>
+                                        <p style={{whiteSpace:'pre-wrap'}}>{q.question}</p>
+                                        {showAnswers && <div style={{marginTop:'10px', color:'#16a34a'}}><b>Solution:</b><br/>{q.answerKey}</div>}
+                                    </div>
+                                ))}
+                                <button style={{background:'#64748b'}} onClick={() => setView("setup")}>← Load Another Paper</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
